@@ -1,20 +1,31 @@
 {
   "name": "@isimplifyme/aeo-scan",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Unified iSM AEO scanner — source-parse and fetch-mode page auditing against the AEO Standard. Replaces the per-repo aeo-check.ts / aeo-scan.mjs / aeo-audit.mjs copies.",
   "type": "module",
-  "bin": { "aeo-scan": "./dist/cli.js" },
+  "bin": {
+    "aeo-scan": "./dist/cli.js"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
-  "engines": { "node": ">=20" },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
     "prepublishOnly": "npm run test && npm run build"
   },
-  "repository": { "type": "git", "url": "https://github.com/iSimplifyMe/aeo-scan.git" },
-  "publishConfig": { "registry": "https://npm.pkg.github.com" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/iSimplifyMe/aeo-scan.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "license": "UNLICENSED",
   "devDependencies": {
     "@types/node": "^24.0.0",

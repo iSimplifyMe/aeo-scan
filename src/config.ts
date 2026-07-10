@@ -29,6 +29,8 @@ export interface AeoScanConfig {
     descMin: number
     descMax: number
     userAgent: string
+    /** Append a cache-busting query param to every fetched URL (defeats CDN-stale HTML). Default true. */
+    cacheBust: boolean
   }
   /** Extra required-field rules per schema @type (merged over defaults). */
   schemaRequired: Record<string, string[]>
@@ -65,6 +67,7 @@ export const DEFAULT_CONFIG: AeoScanConfig = {
     descMin: 120,
     descMax: 160,
     userAgent: 'iSM-AEO-scanner/3.0 (@isimplifyme/aeo-scan)',
+    cacheBust: true,
   },
   schemaRequired: {},
 }

@@ -47,7 +47,12 @@ export function concreteRoutes(discovered: string[], substitutions: Record<strin
 }
 
 export async function auditRoute(base: string, route: string, config: AeoScanConfig): Promise<FetchResult> {
-  const url = base.replace(/\/$/, '') + route
+  // Cache-buster defeats CDN-stale HTML on prod audits (ported from the
+  // roofing/afterloss legacy scripts during the 2026-07 unification).
+  const bust = config.fetch.cacheBust
+    ? `${route.includes('?') ? '&' : '?'}aeocb=${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    : ''
+  const url = base.replace(/\/$/, '') + route + bust
   const issues: Issue[] = []
   const empty: FetchResult = {
     route, status: 0, title: null, titleLen: 0, description: null, descriptionLen: 0,
