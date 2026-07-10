@@ -1,6 +1,6 @@
 {
   "name": "@isimplifyme/aeo-scan",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Unified iSM AEO scanner — source-parse and fetch-mode page auditing against the AEO Standard. Replaces the per-repo aeo-check.ts / aeo-scan.mjs / aeo-audit.mjs copies.",
   "type": "module",
   "bin": {

@@ -70,7 +70,9 @@ async function main() {
     } else {
       printFetchReport(fetched, fetchBase, verbose)
     }
-    process.exit(totalErrors || !sourcePass ? 1 : 0)
+    // exitCode (not process.exit): hard-exit truncates piped stdout >64KB.
+    process.exitCode = totalErrors || !sourcePass ? 1 : 0
+    return
   }
 
   // Source-parse only mode
@@ -80,10 +82,10 @@ async function main() {
   } else {
     printSourceReport(results, verbose)
   }
-  process.exit(results.some((r) => !r.pass) ? 1 : 0)
+  process.exitCode = results.some((r) => !r.pass) ? 1 : 0
 }
 
 main().catch((e) => {
   console.error('[aeo-scan] error:', e instanceof Error ? e.message : e)
-  process.exit(1)
+  process.exitCode = 1
 })
