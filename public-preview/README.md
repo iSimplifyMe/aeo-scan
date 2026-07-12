@@ -25,10 +25,13 @@ One principle underneath it: **AI engines cite content that is genuinely worth
 citing.** Structure makes content extractable; substance makes it citable. A
 structural score is a floor, not a forecast.
 
-The versioned methodology and the full CLI (sitemap crawls, CI exit codes,
-optional LLM-scored substance checks) are in development.
+**The AEO Standard v1.0 is published.** The full CLI (sitemap crawls, CI exit
+codes, optional LLM-scored substance checks) is in development.
 
-- Web scanner today: https://isimplifyme.com/tools/aeo-scanner
+- The AEO Standard v1.0: https://isimplifyme.com/labs/aeo-standard
+- Versioned methodology (CC BY 4.0): https://github.com/iSimplifyMe/aeo-standard
+- White-paper PDF: https://isimplifyme.com/whitepapers/the-aeo-standard
+- Web scanner: https://isimplifyme.com/tools/aeo-scanner
 - Maintained by [iSimplifyMe](https://isimplifyme.com)
 
 MIT © iSimplifyMe
