@@ -4,7 +4,7 @@
   "description": "Score any page the way AI answer engines read it — early preview of the AEO Standard scanner (100-point Answer Engine Optimization rubric).",
   "type": "module",
   "bin": {
-    "aeo-scan": "./cli.mjs"
+    "aeo-scan": "cli.mjs"
   },
   "files": [
     "cli.mjs",
