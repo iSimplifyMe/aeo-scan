@@ -1,31 +1,40 @@
 # @isimplifyme/aeo-scan
 
-**Internal.** The unified iSM AEO scanner — one package replacing the per-repo
-copies of `aeo-check.ts` (eldercare-atlas, roofing-tech-pro, afterloss-atlas),
-`aeo-scan.mjs` (getvesper-site), and `aeo-audit.mjs` (subdial).
+Audit pages the way AI answer engines read them — the iSimplifyMe AEO scanner, scoring the mechanical checks of [The AEO Standard](https://github.com/iSimplifyMe/aeo-standard).
 
-Zero runtime dependencies. Node ≥ 20.
+Zero runtime dependencies. Node ≥ 20. MIT.
 
-## Install (GitHub Packages)
+Two modes, one package:
 
-Repo needs an `.npmrc` with:
+- **Source-parse mode** — walks a Next.js App Router tree (`src/app` by default) and checks each `page.tsx` for the structural elements the standard requires — metadata title and description, atomic answer blocks, FAQ, breadcrumb, and page-type schema — with three-tier route classification (`strict` / `light` / `policy`) and CI exit codes.
+- **Fetch mode** — audits rendered HTML per route: title and description length bands, canonical, OG tags, exactly-one H1, atomic-answer and FAQ counts, JSON-LD parsing with per-`@type` required-field validation (deep `BreadcrumbList` and `FAQPage` checks), and Speakable detection. `@graph`-aware — types inside `{"@graph":[...]}` containers are seen, the bug class that makes whole sites read as schema-free to naive scanners.
 
-```
-@isimplifyme:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
-```
+**A structural score is a floor, not a forecast.** This tool scores the mechanical half of the standard: structure makes content extractable; substance makes it citable, and substance cannot be measured by regex. No score guarantees citation by any answer engine — a tool or consultant promising otherwise is selling certainty that does not exist.
+
+## Try it
+
+The quickest taste is the single-URL preview on npm — no install:
 
 ```bash
-npm i -D @isimplifyme/aeo-scan
+npx aeo-scan https://example.com/some-page
 ```
 
-## Usage
+The preview package ([`aeo-scan` on npm](https://www.npmjs.com/package/aeo-scan)) is maintained from [`public-preview/`](public-preview/) in this repository. A [free web scanner](https://isimplifyme.com/tools/aeo-scanner) runs the same checks in the browser.
+
+## Full CLI
+
+Currently published to GitHub Packages as `@isimplifyme/aeo-scan` (scoped registry, auth required); or clone this repository and run it directly:
+
+```bash
+git clone https://github.com/iSimplifyMe/aeo-scan.git
+cd aeo-scan && npm install && npm run build && npm link
+```
 
 ```bash
 npx aeo-scan                                   # source-parse src/app, exit 1 on tier failure (CI gate)
 npx aeo-scan --json                            # machine-readable
 npx aeo-scan --verbose                         # print checks even when passing
-npx aeo-scan --fetch http://localhost:3344     # + rendered-HTML audit (title/desc bands, schema validation)
+npx aeo-scan --fetch http://localhost:3000     # + rendered-HTML audit (title/desc bands, schema validation)
 npx aeo-scan --fetch https://site.com --sitemap    # discover routes from sitemap.xml instead of src/app
 npx aeo-scan --fetch https://site.com --sitemap --md docs/AEO-AUDIT.md   # + Markdown report artifact
 ```
@@ -50,16 +59,16 @@ Everything site-specific lives here; no config = generic defaults.
 }
 ```
 
-## What it checks
+The default source-parse checks look for the component conventions iSimplifyMe sites use (`<AtomicAnswer>`, `<FAQSchema>`, …). They are regex patterns in config, not hardcoded — override `sourceChecks` to match your own components, or use fetch mode, which is convention-free.
 
-- **Source-parse mode:** page.tsx per route — H1/ContentHero, metadata title +
-  description, AtomicAnswer, FAQAccordion, FAQSchema, BreadcrumbSchema,
-  page-type schema; 3-tier requirements (strict / light / policy).
-- **Fetch mode:** rendered `<title>`/description length bands, canonical, OG
-  tags, exactly-one H1, atomic-answer + FAQ counts, JSON-LD parse +
-  per-@type required-field validation (deep BreadcrumbList/FAQPage checks),
-  Speakable detection. **@graph-aware** — the legacy scripts missed types
-  inside `{"@graph":[...]}` containers entirely.
+## The AEO Standard
+
+The rubric this tool scores against is published and versioned:
+
+- The standard (CC BY 4.0): [github.com/iSimplifyMe/aeo-standard](https://github.com/iSimplifyMe/aeo-standard) · canonical home [isimplifyme.com/labs/aeo-standard](https://isimplifyme.com/labs/aeo-standard)
+- White-paper edition: [isimplifyme.com/whitepapers/the-aeo-standard](https://isimplifyme.com/whitepapers/the-aeo-standard)
+
+The standard marks each check **mechanical** (software-scoreable — this tool) or **judgment** (human/LLM — substance and originality). This CLI deliberately scores only the mechanical subset.
 
 ## Development
 
@@ -67,10 +76,16 @@ Everything site-specific lives here; no config = generic defaults.
 npm install
 npm test          # vitest
 npm run build     # tsc → dist/
-npm publish       # runs test+build via prepublishOnly; needs write:packages token
 ```
 
-`public-preview/` holds the standalone `aeo-scan` npmjs placeholder package
-(the public name claim) — separate from this internal package. See
-`~/claude/projects/iSM-aeo/oss-aeo-scanner-scope-2026-07-10.md` for the
-tiered open-source plan this fits into.
+## Scope and maintenance
+
+The core stays small and dependency-free; site-specific customization belongs in `aeo-scan.config.json`, not in the core. Issues are reviewed on a monthly cadence — reports of false positives or false negatives in specific checks are especially welcome, with the page HTML (or a reduction) attached.
+
+## License
+
+MIT © iSimplifyMe
+
+---
+
+Maintained by [iSimplifyMe](https://isimplifyme.com) — AI orchestration infrastructure and answer-engine optimization. Commercial support and full-rubric audits: [isimplifyme.com/services/aeo-infrastructure](https://isimplifyme.com/services/aeo-infrastructure).

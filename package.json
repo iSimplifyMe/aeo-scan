@@ -26,7 +26,7 @@
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
   },
-  "license": "UNLICENSED",
+  "license": "MIT",
   "devDependencies": {
     "@types/node": "^24.0.0",
     "tsx": "^4.19.0",

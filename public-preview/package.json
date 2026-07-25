@@ -26,5 +26,10 @@
   ],
   "author": "iSimplifyMe (https://isimplifyme.com)",
   "homepage": "https://isimplifyme.com/tools/aeo-scanner",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iSimplifyMe/aeo-scan.git",
+    "directory": "public-preview"
+  },
   "license": "MIT"
 }
