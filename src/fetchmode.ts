@@ -12,6 +12,8 @@ import {
 } from './html.js'
 import { extractJsonLd, schemaTypes, faqQuestionCount, hasSpeakable } from './jsonld.js'
 import { validateBlocks, DEFAULT_REQUIRED, type Issue } from './schema.js'
+import { detectHiddenText, type GateViolation } from './gating.js'
+import { buildScorecard, type Scorecard } from './score.js'
 
 export interface FetchResult {
   route: string
@@ -32,6 +34,12 @@ export interface FetchResult {
   schemaCount: number
   schemaTypes: string[]
   speakable: boolean
+  /** Milliseconds to fetch the document (not a full-page load metric). */
+  elapsedMs: number
+  /** Hidden-text gate violations — any entry is an automatic REJECT. */
+  gate: GateViolation[]
+  /** AEO Standard scorecard (mechanical checks); null when the fetch failed. */
+  scorecard: Scorecard | null
   issues: Issue[]
 }
 
@@ -58,11 +66,13 @@ export async function auditRoute(base: string, route: string, config: AeoScanCon
     route, status: 0, title: null, titleLen: 0, description: null, descriptionLen: 0,
     canonical: null, h1Count: 0, h2Count: 0, atomicCount: 0, faqRendered: 0,
     faqSchemaQuestions: 0, ogTitle: null, ogDesc: null, ogImage: null,
-    schemaCount: 0, schemaTypes: [], speakable: false, issues,
+    schemaCount: 0, schemaTypes: [], speakable: false,
+    elapsedMs: 0, gate: [], scorecard: null, issues,
   }
 
   let status = 0
   let html = ''
+  const t0 = Date.now()
   try {
     const r = await fetch(url, { headers: { 'User-Agent': config.fetch.userAgent } })
     status = r.status
@@ -71,6 +81,7 @@ export async function auditRoute(base: string, route: string, config: AeoScanCon
     issues.push({ route, level: 'error', message: `fetch failed: ${e instanceof Error ? e.message : String(e)}` })
     return empty
   }
+  const elapsedMs = Date.now() - t0
   if (status !== 200) issues.push({ route, level: 'error', message: `HTTP ${status}` })
 
   const { titleMin, titleMax, descMin, descMax } = config.fetch
@@ -99,7 +110,32 @@ export async function auditRoute(base: string, route: string, config: AeoScanCon
 
   const blocks = extractJsonLd(html)
   const types = schemaTypes(blocks)
-  issues.push(...validateBlocks(route, blocks, { ...DEFAULT_REQUIRED, ...config.schemaRequired }))
+  const schemaIssues = validateBlocks(route, blocks, { ...DEFAULT_REQUIRED, ...config.schemaRequired })
+  issues.push(...schemaIssues)
+
+  // Gate 1 of the standard: hidden machine-only content = automatic REJECT.
+  const gate = detectHiddenText(html)
+  for (const v of gate) {
+    issues.push({ route, level: 'error', message: `GATE: hidden machine-only content — ${v.pattern}, ${v.words} words ("${v.snippet.slice(0, 60)}…")` })
+  }
+
+  const scorecard = buildScorecard({
+    html,
+    route,
+    origin: base.replace(/\/$/, ''),
+    title,
+    description,
+    canonical,
+    h1Count: h1s,
+    faqSchemaQuestions: faqQuestionCount(blocks),
+    schemaTypes: [...types],
+    schemaErrorCount: schemaIssues.filter((i) => i.level === 'error').length,
+    schemaIssueMessages: schemaIssues.filter((i) => i.level === 'error').map((i) => i.message),
+    ogTitle,
+    ogImage,
+    gate,
+    elapsedMs,
+  })
 
   return {
     route,
@@ -120,6 +156,9 @@ export async function auditRoute(base: string, route: string, config: AeoScanCon
     schemaCount: blocks.length,
     schemaTypes: [...types],
     speakable: hasSpeakable(blocks),
+    elapsedMs,
+    gate,
+    scorecard,
     issues,
   }
 }

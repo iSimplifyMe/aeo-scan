@@ -9,6 +9,10 @@ export { extractJsonLd, flattenNodes, schemaTypes, faqQuestionCount, hasSpeakabl
 export type { JsonLdBlock } from './jsonld.js'
 export { validateSchemaNode, validateBlocks, DEFAULT_REQUIRED } from './schema.js'
 export type { Issue } from './schema.js'
+export { detectHiddenText, wordCount } from './gating.js'
+export type { GateViolation } from './gating.js'
+export { buildScorecard } from './score.js'
+export type { Scorecard, SectionScore, CheckResult, CheckKind, ScoreInput } from './score.js'
 export {
   decodeEntities,
   extractTitle,
@@ -18,5 +22,17 @@ export {
   h2Count,
   atomicAnswerCount,
   renderedFaqCount,
+  headingSequence,
+  questionHeadingCount,
+  headingNestingClean,
+  paragraphTexts,
+  sentenceCount,
+  anchorLinks,
+  tocAnchorLinkCount,
+  imageAltStats,
+  atomicBlocks,
+  bodyWordCount,
 } from './html.js'
-export { printSourceReport, printFetchReport, buildMarkdownReport } from './report.js'
+export type { Heading, AnchorLink, ImageAltStats, AtomicBlock } from './html.js'
+export { coreChecks, printSourceReport, printFetchReport, printSingleUrlReport, printScorecard, buildMarkdownReport } from './report.js'
+export type { CoreCheck } from './report.js'

@@ -12,6 +12,8 @@ export interface Issue {
 export const DEFAULT_REQUIRED: Record<string, string[]> = {
   Article: ['headline', 'datePublished', 'description'],
   BlogPosting: ['headline', 'datePublished', 'description'],
+  TechArticle: ['headline', 'datePublished', 'description'],
+  NewsArticle: ['headline', 'datePublished', 'description'],
   BreadcrumbList: ['itemListElement'],
   FAQPage: ['mainEntity'],
   WebPage: ['name'],

@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
- * @isimplifyme/aeo-scan — unified CLI.
+ * aeo-scan — the AEO Standard's scanner, unified CLI.
  *
- * Modes (mirroring the legacy per-repo scripts so migration is drop-in):
+ * Modes:
+ *   aeo-scan <url> [<url>…]           single-URL audit(s): core checks + gate + scorecard
  *   aeo-scan                          source-parse src/app, exit 1 on tier failure
  *   aeo-scan --fetch <base>           source pre-check + rendered-HTML audit
  *   aeo-scan --fetch <base> --sitemap route discovery from <base>/sitemap.xml
@@ -10,19 +11,52 @@
  *   aeo-scan --verbose                print checks even when passing
  *   aeo-scan --md <path>              also write a Markdown report (fetch mode)
  *
+ * The single-URL mode preserves the 0.0.x preview contract: the nine core
+ * checks decide the exit code; the scorecard is additive information.
  * Per-site behavior comes from aeo-scan.config.json (see config.ts).
  */
 
 import { writeFile, mkdir } from 'node:fs/promises'
+import { realpathSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { loadConfig } from './config.js'
 import { runSourceScan } from './source.js'
-import { concreteRoutes, runFetchAudit } from './fetchmode.js'
+import { auditRoute, concreteRoutes, runFetchAudit } from './fetchmode.js'
 import { routesFromSitemap } from './sitemap.js'
-import { printSourceReport, printFetchReport, buildMarkdownReport } from './report.js'
+import { coreChecks, printSourceReport, printFetchReport, printSingleUrlReport, buildMarkdownReport } from './report.js'
+
+const HELP = `aeo-scan — score a page the way AI answer engines read it
+
+Usage:
+  npx aeo-scan <url> [<url>…]        audit URL(s): core checks, hidden-text gate,
+                                     AEO Standard mechanical scorecard
+  npx aeo-scan                       source-parse src/app (CI gate, exit 1 on tier failure)
+  npx aeo-scan --fetch <base>        rendered-HTML audit of every discovered route
+  npx aeo-scan --fetch <base> --sitemap   discover routes from <base>/sitemap.xml
+  npx aeo-scan --json                machine-readable output
+  npx aeo-scan --verbose             print passing checks too
+  npx aeo-scan --fetch <base> --md <path> write a Markdown report
+
+The standard: https://isimplifyme.com/labs/aeo-standard (CC BY 4.0)
+A structural score is a floor, not a forecast.`
+
+/** Positional URLs, excluding values consumed by --fetch/--md. */
+export function positionalUrls(argv: string[]): string[] {
+  const consumed = new Set<number>()
+  for (const flag of ['--fetch', '--md']) {
+    const i = argv.indexOf(flag)
+    if (i >= 0) consumed.add(i + 1)
+  }
+  return argv.filter((a, i) => /^https?:\/\//i.test(a) && !consumed.has(i))
+}
 
 async function main() {
   const argv = process.argv.slice(2)
+  if (argv.includes('--help') || argv.includes('-h')) {
+    console.log(HELP)
+    return
+  }
   const asJson = argv.includes('--json')
   const verbose = argv.includes('--verbose')
   const useSitemap = argv.includes('--sitemap')
@@ -33,6 +67,31 @@ async function main() {
 
   const cwd = process.cwd()
   const config = loadConfig(cwd)
+
+  // --- Single-URL mode (the npx aeo-scan <url> contract) ---
+  const urls = positionalUrls(argv)
+  if (urls.length && !fetchBase) {
+    let failed = false
+    const jsonOut: unknown[] = []
+    for (const raw of urls) {
+      let parsed: URL
+      try {
+        parsed = new URL(raw)
+      } catch {
+        console.error(`invalid URL: ${raw}`)
+        failed = true
+        continue
+      }
+      const result = await auditRoute(parsed.origin, parsed.pathname + parsed.search, config)
+      const core = coreChecks(result, config)
+      if (result.gate.length || core.some((c) => !c.ok) || result.status !== 200) failed = true
+      if (asJson) jsonOut.push({ url: raw, result })
+      else printSingleUrlReport(raw, result, config, verbose)
+    }
+    if (asJson) console.log(JSON.stringify(jsonOut, null, 2))
+    process.exitCode = failed ? 1 : 0
+    return
+  }
 
   if (fetchBase) {
     let routes: string[]
@@ -85,7 +144,17 @@ async function main() {
   process.exitCode = results.some((r) => !r.pass) ? 1 : 0
 }
 
-main().catch((e) => {
-  console.error('[aeo-scan] error:', e instanceof Error ? e.message : e)
-  process.exitCode = 1
-})
+const isMain = (() => {
+  try {
+    return import.meta.url === pathToFileURL(realpathSync(process.argv[1] ?? '')).href
+  } catch {
+    return false
+  }
+})()
+
+if (isMain) {
+  main().catch((e) => {
+    console.error('[aeo-scan] error:', e instanceof Error ? e.message : e)
+    process.exitCode = 1
+  })
+}
